@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:spotiflac_android/models/playback_item.dart';
 import 'package:spotiflac_android/models/track.dart';
+import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
@@ -271,6 +272,7 @@ class PlaybackController extends Notifier<PlaybackState> {
   static const int _smartQueueMaxAutoAddsPerSession = 40;
   static const int _smartQueueRecentPlayedWindow = 40;
   static const int _smartQueueCandidatePoolLimit = 28;
+  static const int _smartQueueOfflinePoolMaxItems = 1800;
   static const int _smartQueueRelatedArtistsLimit = 3;
   static const int _smartQueueMaxAffinityKeys = 160;
   static const int _smartQueueSessionWindowSize = 10;
@@ -1136,26 +1138,8 @@ class PlaybackController extends Notifier<PlaybackState> {
 
   PlaybackItem _buildQueueItemFromTrack(Track track) {
     final localState = ref.read(localLibraryProvider);
-    final isLocalSource = (track.source ?? '').toLowerCase() == 'local';
-
-    LocalLibraryItem? localItem;
-    if (isLocalSource) {
-      for (final item in localState.items) {
-        if (item.id == track.id) {
-          localItem = item;
-          break;
-        }
-      }
-    }
-
-    if (localItem == null) {
-      final isrc = track.isrc?.trim();
-      if (isrc != null && isrc.isNotEmpty) {
-        localItem = localState.getByIsrc(isrc);
-      }
-    }
-
-    localItem ??= localState.findByTrackAndArtist(track.name, track.artistName);
+    final historyState = ref.read(downloadHistoryProvider);
+    final localItem = _findLocalLibraryItemForTrack(track, localState);
 
     if (localItem != null && localItem.filePath.isNotEmpty) {
       final localUri = _uriFromPath(localItem.filePath);
@@ -1177,6 +1161,30 @@ class PlaybackController extends Notifier<PlaybackState> {
       );
     }
 
+    final historyItem = _findDownloadHistoryItemForTrack(track, historyState);
+    if (historyItem != null && historyItem.filePath.isNotEmpty) {
+      final localUri = _uriFromPath(historyItem.filePath);
+      final localDurationMs =
+          historyItem.duration != null && historyItem.duration! > 0
+          ? historyItem.duration! * 1000
+          : _trackDurationMs(track);
+      final playbackId = (historyItem.spotifyId ?? '').trim().isNotEmpty
+          ? historyItem.spotifyId!.trim()
+          : historyItem.id;
+      return PlaybackItem(
+        id: playbackId,
+        title: historyItem.trackName,
+        artist: historyItem.artistName,
+        album: historyItem.albumName,
+        coverUrl: historyItem.coverUrl ?? track.coverUrl ?? '',
+        sourceUri: localUri.toString(),
+        isLocal: true,
+        service: 'offline',
+        durationMs: localDurationMs,
+        track: track,
+      );
+    }
+
     return PlaybackItem(
       id: track.id,
       title: track.name,
@@ -1187,6 +1195,73 @@ class PlaybackController extends Notifier<PlaybackState> {
       durationMs: _trackDurationMs(track),
       track: track,
     );
+  }
+
+  LocalLibraryItem? _findLocalLibraryItemForTrack(
+    Track track,
+    LocalLibraryState localState,
+  ) {
+    final isLocalSource = (track.source ?? '').toLowerCase() == 'local';
+    if (isLocalSource) {
+      for (final item in localState.items) {
+        if (item.id == track.id) {
+          return item;
+        }
+      }
+    }
+
+    final isrc = track.isrc?.trim();
+    if (isrc != null && isrc.isNotEmpty) {
+      final byIsrc = localState.getByIsrc(isrc);
+      if (byIsrc != null) return byIsrc;
+    }
+
+    return localState.findByTrackAndArtist(track.name, track.artistName);
+  }
+
+  DownloadHistoryItem? _findDownloadHistoryItemForTrack(
+    Track track,
+    DownloadHistoryState historyState,
+  ) {
+    for (final candidateId in _spotifyIdLookupCandidates(track.id)) {
+      final bySpotifyId = historyState.getBySpotifyId(candidateId);
+      if (bySpotifyId != null) return bySpotifyId;
+    }
+
+    final isrc = track.isrc?.trim();
+    if (isrc != null && isrc.isNotEmpty) {
+      final byIsrc = historyState.getByIsrc(isrc);
+      if (byIsrc != null) return byIsrc;
+    }
+
+    return historyState.findByTrackAndArtist(track.name, track.artistName);
+  }
+
+  List<String> _spotifyIdLookupCandidates(String rawId) {
+    final trimmed = rawId.trim();
+    if (trimmed.isEmpty) return const [];
+
+    final candidates = <String>{trimmed};
+    final lowered = trimmed.toLowerCase();
+    if (lowered.startsWith('spotify:track:')) {
+      final compact = trimmed.split(':').last.trim();
+      if (compact.isNotEmpty) candidates.add(compact);
+    } else if (!trimmed.contains(':')) {
+      candidates.add('spotify:track:$trimmed');
+    }
+
+    final uri = Uri.tryParse(trimmed);
+    final segments = uri?.pathSegments ?? const <String>[];
+    final trackIndex = segments.indexOf('track');
+    if (trackIndex >= 0 && trackIndex + 1 < segments.length) {
+      final pathId = segments[trackIndex + 1].trim();
+      if (pathId.isNotEmpty) {
+        candidates.add(pathId);
+        candidates.add('spotify:track:$pathId');
+      }
+    }
+
+    return candidates.toList(growable: false);
   }
 
   int _trackDurationMs(Track track) {
@@ -2344,7 +2419,62 @@ class PlaybackController extends Notifier<PlaybackState> {
     if (relatedArtistTracks.isNotEmpty) {
       merged.addAll(relatedArtistTracks);
     }
+
+    if (merged.isEmpty) {
+      merged.addAll(
+        _fallbackOfflineTracksForSmartQueue(seed: seed, limit: max(12, limit)),
+      );
+    }
+
     return merged;
+  }
+
+  List<Track> _fallbackOfflineTracksForSmartQueue({
+    required Track seed,
+    required int limit,
+  }) {
+    if (limit <= 0) return const [];
+
+    final pool = _buildOfflineTrackPoolForSmartQueue(
+      maxItems: _smartQueueOfflinePoolMaxItems,
+    );
+    if (pool.isEmpty) return const [];
+
+    final seedKey = _trackKeyFromTrack(seed);
+    final seedArtist = _normalizeSmartQueueKey(seed.artistName);
+    final seedAlbum = _normalizeSmartQueueKey(seed.albumName);
+    final seedSource = _sourceKey(seed.source ?? '');
+
+    final scored = <_OfflineSmartQueueTrackHit>[];
+    for (final track in pool) {
+      final key = _trackKeyFromTrack(track);
+      if (key.isEmpty || key == seedKey) continue;
+
+      var score = 0.35;
+      final artistKey = _normalizeSmartQueueKey(track.artistName);
+      final albumKey = _normalizeSmartQueueKey(track.albumName);
+      final sourceKey = _sourceKey(track.source ?? '');
+      if (artistKey.isNotEmpty && artistKey == seedArtist) {
+        score += 2.1;
+      }
+      if (albumKey.isNotEmpty && albumKey == seedAlbum) {
+        score += 1.25;
+      }
+      if (sourceKey == seedSource) {
+        score += 0.35;
+      }
+      score += _durationSimilarity(seed.duration, track.duration) * 0.55;
+      score +=
+          _releaseYearSimilarity(seed.releaseDate, track.releaseDate) * 0.3;
+      score += _smartQueueRandom.nextDouble() * 0.08;
+      scored.add(_OfflineSmartQueueTrackHit(track: track, score: score));
+    }
+
+    scored.sort((a, b) => b.score.compareTo(a.score));
+    return scored
+        .take(limit)
+        .map((entry) => entry.track)
+        .toList(growable: false);
   }
 
   Future<List<Track>> _fetchRelatedArtistTracksForSmartQueue(
@@ -2484,117 +2614,89 @@ class PlaybackController extends Notifier<PlaybackState> {
   Future<List<_SmartQueueRelatedArtist>> _fetchRelatedArtistsFromProviderSeed(
     _SmartQueueArtistSeed seed,
   ) async {
-    try {
-      if (seed.provider == 'spotify') {
-        return await _fetchSpotifyRelatedArtistsForSmartQueue(seed);
-      } else if (seed.provider == 'deezer') {
-        final response = await PlatformBridge.getDeezerRelatedArtists(
-          seed.id,
-          limit: 10,
-        );
-        final rawList = response['artists'] as List<dynamic>? ?? const [];
-        final result = <_SmartQueueRelatedArtist>[];
-        for (final entry in rawList) {
-          if (entry is! Map) continue;
-          final map = Map<String, dynamic>.from(entry);
-          final name = (map['name'] as String?)?.trim() ?? '';
-          if (name.isEmpty) continue;
-          final popularity = (map['popularity'] as num?)?.toDouble() ?? 0.0;
-          final followers = (map['followers'] as num?)?.toDouble() ?? 0.0;
-          final score =
-              ((popularity / 100.0) * 0.65) +
-              (min(followers, 2000000) / 2000000.0) * 0.35;
-          result.add(
-            _SmartQueueRelatedArtist(
-              name: name,
-              provider: seed.provider,
-              score: score.clamp(0.05, 1.0),
-            ),
-          );
-        }
-        return result;
-      }
-      return const [];
-    } catch (_) {
-      return const [];
+    if (seed.provider == 'spotify') {
+      return _fetchSpotifyRelatedArtistsForSmartQueue(seed);
     }
+    return _buildOfflineRelatedArtistsFromSeed(
+      seed,
+      providerLabel: seed.provider,
+    );
   }
 
   Future<List<_SmartQueueRelatedArtist>>
   _fetchSpotifyRelatedArtistsForSmartQueue(_SmartQueueArtistSeed seed) async {
+    return _buildOfflineRelatedArtistsFromSeed(
+      seed,
+      providerLabel: _smartQueueSpotifyExtensionId,
+    );
+  }
+
+  Future<List<_SmartQueueRelatedArtist>> _buildOfflineRelatedArtistsFromSeed(
+    _SmartQueueArtistSeed seed, {
+    required String providerLabel,
+  }) async {
     final seedArtistKey = _normalizeSmartQueueKey(seed.name);
     if (seedArtistKey.isEmpty) return const [];
 
-    final relatedScores = <String, double>{};
-    final relatedNames = <String, String>{};
+    final pool = _buildOfflineTrackPoolForSmartQueue(
+      maxItems: _smartQueueOfflinePoolMaxItems,
+    );
+    if (pool.isEmpty) return const [];
 
-    void addRelatedName(String rawName, double score) {
+    final candidateScoreByKey = <String, double>{};
+    final candidateNameByKey = <String, String>{};
+    final seedAlbumKeys = <String>{};
+
+    void addCandidate(String rawName, double score) {
       final name = rawName.trim();
       final key = _normalizeSmartQueueKey(name);
       if (key.isEmpty || key == seedArtistKey || score <= 0) return;
-      relatedNames[key] = name;
-      relatedScores[key] = (relatedScores[key] ?? 0.0) + score;
+      candidateNameByKey[key] = name;
+      candidateScoreByKey[key] = (candidateScoreByKey[key] ?? 0) + score;
     }
 
-    try {
-      final artist = await PlatformBridge.getArtistWithExtension(
-        _smartQueueSpotifyExtensionId,
-        seed.id,
+    for (final track in pool) {
+      final artists = _extractArtistNamesForSmartQueue(track.artistName);
+      if (artists.isEmpty) continue;
+
+      final containsSeed = artists.any(
+        (artistName) => _normalizeSmartQueueKey(artistName) == seedArtistKey,
       );
-      if (artist != null) {
-        final topTracks = artist['top_tracks'] as List<dynamic>? ?? const [];
-        for (var index = 0; index < topTracks.length && index < 20; index++) {
-          final entry = topTracks[index];
-          if (entry is! Map) continue;
-          final map = Map<String, dynamic>.from(entry);
-          final artistsText = (map['artists'] ?? map['artist'] ?? '')
-              .toString()
-              .trim();
-          if (artistsText.isEmpty) continue;
-          final rankWeight = (1.0 - (index / 18.0)).clamp(0.18, 1.0);
-          for (final artistName in _extractArtistNamesForSmartQueue(
-            artistsText,
-          )) {
-            addRelatedName(artistName, 0.42 * rankWeight);
-          }
+      if (containsSeed) {
+        for (final artistName in artists) {
+          final key = _normalizeSmartQueueKey(artistName);
+          if (key == seedArtistKey) continue;
+          addCandidate(artistName, 0.85);
+        }
+        final albumKey = _normalizeSmartQueueKey(track.albumName);
+        if (albumKey.isNotEmpty) {
+          seedAlbumKeys.add(albumKey);
         }
       }
-    } catch (_) {}
+    }
 
-    try {
-      final searchResults = await PlatformBridge.customSearchWithExtension(
-        _smartQueueSpotifyExtensionId,
-        seed.name,
-        options: <String, dynamic>{
-          'filter': 'artists',
-          'limit': 12,
-          'offset': 0,
-        },
-      );
-      for (var index = 0; index < searchResults.length; index++) {
-        final map = searchResults[index];
-        final itemType = (map['item_type'] ?? '').toString().toLowerCase();
-        if (itemType.isNotEmpty && itemType != 'artist') continue;
-        final id = (map['id'] ?? '').toString().trim();
-        final name = (map['name'] ?? '').toString().trim();
-        if (name.isEmpty) continue;
-        final normalizedName = _normalizeSmartQueueKey(name);
-        if (normalizedName == seedArtistKey || id == seed.id) continue;
-
-        final similarity = _artistNameSimilarity(seed.name, name);
-        final rankWeight = (1.0 - (index / 12.0)).clamp(0.1, 1.0);
-        addRelatedName(name, (rankWeight * 0.24) + (similarity * 0.12));
+    if (seedAlbumKeys.isNotEmpty) {
+      for (final track in pool) {
+        final albumKey = _normalizeSmartQueueKey(track.albumName);
+        if (albumKey.isEmpty || !seedAlbumKeys.contains(albumKey)) continue;
+        for (final artistName in _extractArtistNamesForSmartQueue(
+          track.artistName,
+        )) {
+          final key = _normalizeSmartQueueKey(artistName);
+          if (key == seedArtistKey) continue;
+          addCandidate(artistName, 0.38);
+        }
       }
-    } catch (_) {}
+    }
 
-    if (relatedScores.isEmpty) return const [];
+    if (candidateScoreByKey.isEmpty) return const [];
 
     final related = <_SmartQueueRelatedArtist>[];
-    for (final entry in relatedScores.entries) {
+    for (final entry in candidateScoreByKey.entries) {
       related.add(
         _SmartQueueRelatedArtist(
-          name: relatedNames[entry.key] ?? entry.key,
-          provider: _smartQueueSpotifyExtensionId,
+          name: candidateNameByKey[entry.key] ?? entry.key,
+          provider: providerLabel,
           score: entry.value.clamp(0.05, 1.0),
         ),
       );
@@ -2632,71 +2734,63 @@ class PlaybackController extends Notifier<PlaybackState> {
       return const [];
     }
 
-    try {
-      final List<Map<String, dynamic>> artistsRaw;
-      if (normalizedProvider == 'spotify') {
-        final response = await PlatformBridge.customSearchWithExtension(
-          _smartQueueSpotifyExtensionId,
-          normalizedQuery,
-          options: <String, dynamic>{
-            'filter': 'artists',
-            'limit': min(30, max(4, limit)),
-            'offset': 0,
-          },
-        );
-        artistsRaw = response
-            .where(
-              (item) =>
-                  (item['item_type'] ?? 'artist').toString().toLowerCase() ==
-                  'artist',
-            )
-            .toList(growable: false);
-      } else {
-        final result = await PlatformBridge.searchDeezerAll(
-          normalizedQuery,
-          trackLimit: 1,
-          artistLimit: limit,
-          filter: 'artist',
-        );
-        final raw = result['artists'] as List<dynamic>? ?? const [];
-        artistsRaw = raw
-            .whereType<Map>()
-            .map((entry) => Map<String, dynamic>.from(entry))
-            .toList(growable: false);
-      }
+    final pool = _buildOfflineTrackPoolForSmartQueue(
+      maxItems: _smartQueueOfflinePoolMaxItems,
+    );
+    if (pool.isEmpty) return const [];
 
-      final seeds = <_SmartQueueArtistSeed>[];
-      final seen = <String>{};
-      for (var index = 0; index < artistsRaw.length; index++) {
-        final map = artistsRaw[index];
-        final id = (map['id'] ?? '').toString().trim();
-        final name = (map['name'] ?? '').toString().trim();
-        if (id.isEmpty || name.isEmpty) continue;
-        final key = '$normalizedProvider:${_normalizeSmartQueueKey(id)}';
-        if (!seen.add(key)) continue;
+    final statsByArtist = <String, _OfflineSmartQueueArtistStats>{};
+    for (final track in pool) {
+      for (final artistName in _extractArtistNamesForSmartQueue(
+        track.artistName,
+      )) {
+        final key = _normalizeSmartQueueKey(artistName);
+        if (key.isEmpty) continue;
+        final similarity = _artistNameSimilarity(normalizedQuery, artistName);
+        if (similarity <= 0.05 &&
+            !key.contains(_normalizeSmartQueueKey(normalizedQuery))) {
+          continue;
+        }
 
-        final popularity = (map['popularity'] as num?)?.toDouble() ?? 0.0;
-        final similarity = _artistNameSimilarity(query, name);
-        final rankScore = (1.0 - (index / max(1, artistsRaw.length))).clamp(
-          0.05,
-          1.0,
-        );
-        final score = normalizedProvider == 'spotify'
-            ? (similarity * 0.82) + (rankScore * 0.18)
-            : (similarity * 0.72) + ((popularity / 100.0) * 0.28);
-        seeds.add(
-          _SmartQueueArtistSeed(
-            id: id,
-            name: name,
-            provider: normalizedProvider,
-            score: score.clamp(0.0, 1.0),
-          ),
-        );
+        final current = statsByArtist[key];
+        if (current == null) {
+          statsByArtist[key] = _OfflineSmartQueueArtistStats(
+            name: artistName,
+            count: 1,
+            scoreSum: similarity,
+          );
+        } else {
+          statsByArtist[key] = _OfflineSmartQueueArtistStats(
+            name: current.name,
+            count: current.count + 1,
+            scoreSum: current.scoreSum + similarity,
+          );
+        }
       }
-      return seeds;
-    } catch (_) {
-      return const [];
     }
+
+    if (statsByArtist.isEmpty) return const [];
+    final ranked = <_SmartQueueArtistSeed>[];
+    for (final entry in statsByArtist.entries) {
+      final stats = entry.value;
+      final frequencyBoost = min(1.0, stats.count / 18.0);
+      final meanSimilarity = stats.scoreSum / max(1, stats.count);
+      final score = ((meanSimilarity * 0.78) + (frequencyBoost * 0.22)).clamp(
+        0.0,
+        1.0,
+      );
+      ranked.add(
+        _SmartQueueArtistSeed(
+          id: '$normalizedProvider:${entry.key}',
+          name: stats.name,
+          provider: normalizedProvider,
+          score: score,
+        ),
+      );
+    }
+
+    ranked.sort((a, b) => b.score.compareTo(a.score));
+    return ranked.take(max(1, limit)).toList(growable: false);
   }
 
   double _artistNameSimilarity(String a, String b) {
@@ -2898,44 +2992,267 @@ class PlaybackController extends Notifier<PlaybackState> {
     String query, {
     required int trackLimit,
   }) async {
-    final response = await PlatformBridge.customSearchWithExtension(
-      _smartQueueSpotifyExtensionId,
+    return _searchOfflineTracksForSmartQueue(
       query,
-      options: <String, dynamic>{
-        'filter': 'tracks',
-        'limit': min(50, max(1, trackLimit)),
-        'offset': 0,
-      },
+      trackLimit: trackLimit,
+      providerHint: 'spotify',
     );
-    return response
-        .where(
-          (item) =>
-              (item['item_type'] ?? 'track').toString().toLowerCase() ==
-              'track',
-        )
-        .toList(growable: false);
   }
 
   Future<List<Map<String, dynamic>>> _searchDeezerTracksForSmartQueue(
     String query, {
     required int trackLimit,
   }) async {
-    final result = await PlatformBridge.searchDeezerAll(
+    return _searchOfflineTracksForSmartQueue(
       query,
       trackLimit: trackLimit,
-      artistLimit: 0,
-      filter: 'track',
+      providerHint: 'deezer',
     );
-    final tracks = result['tracks'] as List<dynamic>? ?? const [];
-    return tracks
-        .whereType<Map>()
-        .map((entry) {
-          final map = Map<String, dynamic>.from(entry);
-          map.putIfAbsent('provider_id', () => 'deezer');
-          map.putIfAbsent('source', () => 'deezer');
-          return map;
-        })
+  }
+
+  Future<List<Map<String, dynamic>>> _searchOfflineTracksForSmartQueue(
+    String query, {
+    required int trackLimit,
+    required String providerHint,
+  }) async {
+    final normalizedQuery = _normalizeSmartQueueKey(query);
+    if (normalizedQuery.isEmpty || trackLimit <= 0) return const [];
+
+    final terms = normalizedQuery
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((token) => token.isNotEmpty)
         .toList(growable: false);
+    final pool = _buildOfflineTrackPoolForSmartQueue(
+      maxItems: _smartQueueOfflinePoolMaxItems,
+    );
+    if (pool.isEmpty) return const [];
+
+    final scored = <_OfflineSmartQueueTrackHit>[];
+    for (final track in pool) {
+      var score = _searchScoreForOfflineTrack(
+        track,
+        normalizedQuery: normalizedQuery,
+        terms: terms,
+      );
+      if (score <= 0) continue;
+
+      if (providerHint == 'spotify' && _looksLikeSpotifyTrackId(track.id)) {
+        score += 0.22;
+      } else if (providerHint == 'deezer' &&
+          _looksLikeDeezerTrackId(track.id, track.deezerId)) {
+        score += 0.22;
+      }
+
+      final artistAffinity =
+          _smartQueueArtistAffinity[_normalizeSmartQueueKey(
+            track.artistName,
+          )] ??
+          0.0;
+      score += max(0.0, artistAffinity) * 0.25;
+      score += _smartQueueRandom.nextDouble() * 0.05;
+      scored.add(_OfflineSmartQueueTrackHit(track: track, score: score));
+    }
+
+    if (scored.isEmpty) return const [];
+    scored.sort((a, b) => b.score.compareTo(a.score));
+    final target = max(1, trackLimit);
+    return scored
+        .take(target)
+        .map(
+          (entry) => _rawMapForOfflineSmartQueueTrack(
+            entry.track,
+            providerHint: providerHint,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  List<Track> _buildOfflineTrackPoolForSmartQueue({required int maxItems}) {
+    if (maxItems <= 0) return const [];
+
+    final localItems = [...ref.read(localLibraryProvider).items];
+    final historyItems = [...ref.read(downloadHistoryProvider).items];
+    localItems.sort((a, b) => b.scannedAt.compareTo(a.scannedAt));
+    historyItems.sort((a, b) => b.downloadedAt.compareTo(a.downloadedAt));
+
+    final pool = <Track>[];
+    final seen = <String>{};
+    final perSourceCap = max(40, maxItems ~/ 2);
+
+    void addTrack(Track? track) {
+      if (track == null) return;
+      final name = track.name.trim();
+      final artist = track.artistName.trim();
+      if (name.isEmpty || artist.isEmpty) return;
+      final key = _trackKeyFromTrack(track);
+      if (key.isEmpty || !seen.add(key)) return;
+      pool.add(track);
+    }
+
+    for (final item in historyItems.take(perSourceCap)) {
+      addTrack(_trackFromDownloadHistoryForSmartQueue(item));
+    }
+    for (final item in localItems.take(perSourceCap)) {
+      addTrack(_trackFromLocalLibraryForSmartQueue(item));
+    }
+
+    if (pool.length <= maxItems) return pool;
+    return pool.take(maxItems).toList(growable: false);
+  }
+
+  Track? _trackFromDownloadHistoryForSmartQueue(DownloadHistoryItem item) {
+    final path = item.filePath.trim();
+    if (path.isEmpty) return null;
+    final title = item.trackName.trim();
+    final artist = item.artistName.trim();
+    if (title.isEmpty || artist.isEmpty) return null;
+
+    final spotifyId = (item.spotifyId ?? '').trim();
+    final id = spotifyId.isNotEmpty ? spotifyId : 'history:${item.id}';
+    return Track(
+      id: id,
+      name: title,
+      artistName: artist,
+      albumName: item.albumName,
+      albumArtist: item.albumArtist,
+      coverUrl: item.coverUrl,
+      isrc: item.isrc,
+      duration: max(0, item.duration ?? 0),
+      trackNumber: item.trackNumber,
+      discNumber: item.discNumber,
+      releaseDate: item.releaseDate,
+      source: 'offline',
+    );
+  }
+
+  Track? _trackFromLocalLibraryForSmartQueue(LocalLibraryItem item) {
+    final path = item.filePath.trim();
+    if (path.isEmpty) return null;
+
+    final title = item.trackName.trim();
+    final artist = item.artistName.trim();
+    if (title.isEmpty || artist.isEmpty) return null;
+
+    return Track(
+      id: 'local:${item.id}',
+      name: title,
+      artistName: artist,
+      albumName: item.albumName,
+      albumArtist: item.albumArtist,
+      coverUrl: item.coverPath,
+      isrc: item.isrc,
+      duration: max(0, item.duration ?? 0),
+      trackNumber: item.trackNumber,
+      discNumber: item.discNumber,
+      releaseDate: item.releaseDate,
+      source: 'local',
+    );
+  }
+
+  double _searchScoreForOfflineTrack(
+    Track track, {
+    required String normalizedQuery,
+    required List<String> terms,
+  }) {
+    final title = _normalizeSmartQueueKey(track.name);
+    final artist = _normalizeSmartQueueKey(track.artistName);
+    final album = _normalizeSmartQueueKey(track.albumName);
+    final full = '$title $artist $album';
+    if (full.trim().isEmpty) return 0;
+
+    var score = 0.0;
+    if (title == normalizedQuery) {
+      score += 4.2;
+    } else if (title.startsWith(normalizedQuery)) {
+      score += 3.5;
+    } else if (title.contains(normalizedQuery)) {
+      score += 2.8;
+    }
+
+    if (artist == normalizedQuery) {
+      score += 3.4;
+    } else if (artist.startsWith(normalizedQuery)) {
+      score += 2.7;
+    } else if (artist.contains(normalizedQuery)) {
+      score += 2.0;
+    }
+
+    if (album == normalizedQuery) {
+      score += 1.6;
+    } else if (album.contains(normalizedQuery) && album.isNotEmpty) {
+      score += 1.0;
+    }
+
+    var matchedTerms = 0;
+    for (final term in terms) {
+      if (term.length < 2) continue;
+      if (title.contains(term)) {
+        score += 0.85;
+        matchedTerms++;
+      } else if (artist.contains(term)) {
+        score += 0.72;
+        matchedTerms++;
+      } else if (album.contains(term)) {
+        score += 0.48;
+        matchedTerms++;
+      }
+    }
+    if (terms.isNotEmpty && matchedTerms == terms.length) {
+      score += 0.6;
+    }
+    return score;
+  }
+
+  bool _looksLikeSpotifyTrackId(String rawId) {
+    final id = rawId.trim();
+    if (id.isEmpty) return false;
+    final lowered = id.toLowerCase();
+    if (lowered.startsWith('spotify:track:')) return true;
+    if (lowered.contains('open.spotify.com/track/')) return true;
+    return RegExp(r'^[a-z0-9]{22}$', caseSensitive: false).hasMatch(id);
+  }
+
+  bool _looksLikeDeezerTrackId(String rawId, String? deezerId) {
+    if (deezerId != null && deezerId.trim().isNotEmpty) return true;
+    final id = rawId.trim();
+    if (id.isEmpty) return false;
+    return RegExp(r'^\d{4,}$').hasMatch(id);
+  }
+
+  Map<String, dynamic> _rawMapForOfflineSmartQueueTrack(
+    Track track, {
+    required String providerHint,
+  }) {
+    final rawId = track.id.trim();
+    final map = <String, dynamic>{
+      'id': rawId,
+      'name': track.name,
+      'artists': track.artistName,
+      'artist': track.artistName,
+      'album_name': track.albumName,
+      'album': track.albumName,
+      'album_artist': track.albumArtist,
+      'cover_url': track.coverUrl,
+      'isrc': track.isrc,
+      'duration': track.duration,
+      'duration_ms': track.duration > 0 ? track.duration * 1000 : 0,
+      'track_number': track.trackNumber,
+      'disc_number': track.discNumber,
+      'release_date': track.releaseDate,
+      'album_type': track.albumType,
+      'item_type': 'track',
+      'source': track.source ?? 'offline',
+      'provider_id': providerHint,
+      'deezer_id': track.deezerId,
+    };
+
+    if (_looksLikeSpotifyTrackId(rawId)) {
+      final spotifyId = rawId.toLowerCase().startsWith('spotify:track:')
+          ? rawId.split(':').last
+          : rawId;
+      map['spotify_id'] = spotifyId;
+    }
+    return map;
   }
 
   String _resolveSmartQueueSourceLabel(Track track) {
@@ -3872,6 +4189,25 @@ class _SmartQueueCandidate {
     required this.key,
     required this.features,
     required this.score,
+  });
+}
+
+class _OfflineSmartQueueTrackHit {
+  final Track track;
+  final double score;
+
+  const _OfflineSmartQueueTrackHit({required this.track, required this.score});
+}
+
+class _OfflineSmartQueueArtistStats {
+  final String name;
+  final int count;
+  final double scoreSum;
+
+  const _OfflineSmartQueueArtistStats({
+    required this.name,
+    required this.count,
+    required this.scoreSum,
   });
 }
 
