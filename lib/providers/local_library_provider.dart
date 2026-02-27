@@ -198,7 +198,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     if (raw.isEmpty) return const {};
 
     final cleaned = raw.startsWith('EXISTS:') ? raw.substring(7) : raw;
-    final keys = <String>{cleaned};
+    final keys = <String>{};
 
     void addNormalized(String value) {
       final trimmed = value.trim();
@@ -217,17 +217,41 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
           keys.add(decoded.toLowerCase());
         } catch (_) {}
       }
+
+      Uri? parsed;
+      try {
+        parsed = Uri.parse(trimmed);
+      } catch (_) {}
+
+      if (parsed != null && parsed.hasScheme) {
+        final noQueryOrFragment = parsed.replace(query: null, fragment: null);
+        keys.add(noQueryOrFragment.toString());
+        keys.add(noQueryOrFragment.toString().toLowerCase());
+
+        if (parsed.scheme == 'file') {
+          try {
+            final fileOnly = parsed.toFilePath();
+            if (fileOnly.isNotEmpty) {
+              keys.add(fileOnly);
+              keys.add(fileOnly.toLowerCase());
+              if (fileOnly.contains('\\')) {
+                final slash = fileOnly.replaceAll('\\', '/');
+                keys.add(slash);
+                keys.add(slash.toLowerCase());
+              }
+            }
+          } catch (_) {}
+        }
+      } else if (trimmed.startsWith('/')) {
+        try {
+          final asFileUri = Uri.file(trimmed).toString();
+          keys.add(asFileUri);
+          keys.add(asFileUri.toLowerCase());
+        } catch (_) {}
+      }
     }
 
     addNormalized(cleaned);
-
-    if (cleaned.startsWith('content://')) {
-      try {
-        final uri = Uri.parse(cleaned);
-        addNormalized(uri.toString());
-        addNormalized(uri.replace(query: null, fragment: null).toString());
-      } catch (_) {}
-    }
 
     return keys;
   }
@@ -345,7 +369,11 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
           _log.i('Skipped $skippedDownloads files already in download history');
         }
 
-        await _db.upsertBatch(items.map((e) => e.toJson()).toList());
+        // Full scan should replace library index entirely.
+        await _db.clearAll();
+        if (items.isNotEmpty) {
+          await _db.upsertBatch(items.map((e) => e.toJson()).toList());
+        }
 
         final now = DateTime.now();
         try {
@@ -437,10 +465,24 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         final currentByPath = <String, LocalLibraryItem>{
           for (final item in state.items) item.filePath: item,
         };
+        final existingDownloadedPaths = <String>[];
+        currentByPath.removeWhere((path, _) {
+          final shouldExclude = _isDownloadedPath(path, downloadedPathKeys);
+          if (shouldExclude) {
+            existingDownloadedPaths.add(path);
+          }
+          return shouldExclude;
+        });
+        if (existingDownloadedPaths.isNotEmpty) {
+          final removed = await _db.deleteByPaths(existingDownloadedPaths);
+          _log.i(
+            'Removed $removed downloaded tracks already present in local library index',
+          );
+        }
 
         // Upsert new/modified items (excluding downloaded files)
         final updatedItems = <LocalLibraryItem>[];
-        int skippedDownloads = 0;
+        int skippedDownloads = existingDownloadedPaths.length;
         if (scannedList.isNotEmpty) {
           for (final json in scannedList) {
             final map = json as Map<String, dynamic>;
