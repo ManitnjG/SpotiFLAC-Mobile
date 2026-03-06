@@ -305,7 +305,6 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Full-screen cover background (no blur, full resolution)
                 if (widget.coverUrl != null)
                   CachedNetworkImage(
                     imageUrl:
@@ -326,7 +325,6 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                // Bottom gradient for readability
                 Positioned(
                   left: 0,
                   right: 0,
@@ -345,7 +343,6 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                     ),
                   ),
                 ),
-                // Album info overlay at bottom
                 Positioned(
                   left: 20,
                   right: 20,

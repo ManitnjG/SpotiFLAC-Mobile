@@ -450,7 +450,7 @@
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
-  "aboutAppDescription": "Скачайте треки Spotify в Lossless качестве из Tidal, Qobuz и Amazon Music.",
+  "aboutAppDescription": "Скачайте треки Spotify в Lossless качестве из Tidal и Qobuz.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -1089,7 +1089,7 @@
   },
   "providerBuiltIn": "Встроенные",
   "@providerBuiltIn": {
-    "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
+    "description": "Label for built-in providers (Tidal/Qobuz)"
   },
   "providerExtension": "Расширение",
   "@providerExtension": {
@@ -2358,7 +2358,7 @@
   "@tutorialWelcomeTip1": {
     "description": "Tutorial welcome tip 1"
   },
-  "tutorialWelcomeTip2": "Скачайте FLAC с Tidal, Qobuz или Amazon Music",
+  "tutorialWelcomeTip2": "Скачайте FLAC с Tidal, Qobuz или Deezer",
   "@tutorialWelcomeTip2": {
     "description": "Tutorial welcome tip 2"
   },

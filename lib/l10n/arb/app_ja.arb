@@ -450,7 +450,7 @@
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
-  "aboutAppDescription": "Tidal、Qobuz、Amazon Music から Spotify のトラックをロスレス品質でダウンロードします。",
+  "aboutAppDescription": "Tidal、Qobuz から Spotify のトラックをロスレス品質でダウンロードします。",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -1089,7 +1089,7 @@
   },
   "providerBuiltIn": "内蔵",
   "@providerBuiltIn": {
-    "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
+    "description": "Label for built-in providers (Tidal/Qobuz)"
   },
   "providerExtension": "拡張",
   "@providerExtension": {
@@ -2358,7 +2358,7 @@
   "@tutorialWelcomeTip1": {
     "description": "Tutorial welcome tip 1"
   },
-  "tutorialWelcomeTip2": "Get FLAC quality audio from Tidal, Qobuz, or Amazon Music",
+  "tutorialWelcomeTip2": "Tidal、Qobuz、Deezer から FLAC 品質のオーディオを取得",
   "@tutorialWelcomeTip2": {
     "description": "Tutorial welcome tip 2"
   },

@@ -520,7 +520,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
     final settings = ref.read(settingsProvider);
     final extState = ref.read(extensionProvider);
     final searchProvider = settings.searchProvider;
-    // Use filterOverride if provided, otherwise read from state
     final selectedFilter =
         filterOverride ?? ref.read(trackProvider).selectedSearchFilter;
 
@@ -535,7 +534,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
         extState.extensions.any((e) => e.id == searchProvider && e.enabled);
 
     if (isExtensionEnabled) {
-      // Build options with filter if selected
       Map<String, dynamic>? options;
       if (selectedFilter != null) {
         options = {'filter': selectedFilter};
@@ -1116,7 +1114,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
                 ),
               ),
 
-              // Search filter bar (only shown when has search results)
               if (hasActualResults && !showRecentAccess)
                 Consumer(
                   builder: (context, ref, _) {
@@ -1286,8 +1283,8 @@ class _HomeTabState extends ConsumerState<HomeTab>
               ),
             ],
           ),
-        ), // Close RefreshIndicator
-      ), // Close GestureDetector
+        ),
+      ),
     );
   }
 
@@ -1434,7 +1431,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
             return _buildExploreSection(sections[sectionIndex], colorScheme);
           }
 
-          // Bottom padding
           return const SizedBox(height: 16);
         }, childCount: totalCount),
       ),
@@ -2705,7 +2701,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            // "All" chip (no filter)
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: FilterChip(
@@ -2728,7 +2723,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
                 ),
               ),
             ),
-            // Filter chips from extension
             ...filters.map((filter) {
               final isSelected = selectedFilter == filter.id;
               return Padding(
@@ -2830,7 +2824,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
         prefixIcon: _SearchProviderDropdown(
           onProviderChanged: () {
             _lastSearchQuery = null;
-            // Reset filter when provider changes
             ref.read(trackProvider.notifier).setSearchFilter(null);
             setState(() {});
             final text = _urlController.text.trim();

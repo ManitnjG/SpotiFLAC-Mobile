@@ -356,7 +356,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get aboutAppDescription =>
-      'Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.';
+      'Download Spotify tracks in lossless quality from Tidal and Qobuz.';
 
   @override
   String get artistAlbums => 'Albums';
@@ -1809,7 +1809,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+      'Get FLAC quality audio from Tidal, Qobuz, or Deezer';
 
   @override
   String get tutorialWelcomeTip3 =>
@@ -2696,7 +2696,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get aboutAppDescription =>
-      'Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.';
+      'Download Spotify tracks in lossless quality from Tidal and Qobuz.';
 
   @override
   String get artistAlbums => 'Albums';
@@ -4124,8 +4124,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
       'Download music from Spotify, Deezer, or paste any supported URL';
 
   @override
-  String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+  String get tutorialWelcomeTip2 => '从 Tidal、Qobuz 或 Deezer 获取 FLAC 品质音频';
 
   @override
   String get tutorialWelcomeTip3 =>
@@ -4808,7 +4807,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get aboutAppDescription =>
-      'Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.';
+      'Download Spotify tracks in lossless quality from Tidal and Qobuz.';
 
   @override
   String get artistAlbums => 'Albums';
@@ -6236,8 +6235,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
       'Download music from Spotify, Deezer, or paste any supported URL';
 
   @override
-  String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+  String get tutorialWelcomeTip2 => '從 Tidal、Qobuz 或 Deezer 取得 FLAC 品質音訊';
 
   @override
   String get tutorialWelcomeTip3 =>

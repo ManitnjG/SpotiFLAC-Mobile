@@ -627,7 +627,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Full-screen cover background
         if (_hasPath(_embeddedCoverPreviewPath))
           Image.file(
             File(_embeddedCoverPreviewPath!),
@@ -657,7 +656,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
               color: colorScheme.onSurfaceVariant,
             ),
           ),
-        // Bottom gradient for readability
         Positioned(
           left: 0,
           right: 0,
@@ -676,7 +674,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             ),
           ),
         ),
-        // Track info overlay at bottom
         Positioned(
           left: 20,
           right: 20,
@@ -2606,7 +2603,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Target format
                     Text(
                       context.l10n.trackConvertTargetFormat,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -2639,7 +2635,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Bitrate
                     Text(
                       context.l10n.trackConvertBitrate,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -2664,7 +2659,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Convert button
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
@@ -2750,7 +2744,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         SnackBar(content: Text(context.l10n.trackConvertConverting)),
       );
 
-      // Step 1: Read metadata from file (fallback to known item metadata).
       final metadata = _buildFallbackMetadata();
       try {
         final result = await PlatformBridge.readFileMetadata(cleanFilePath);
@@ -2768,7 +2761,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         _log.w('readFileMetadata threw, using fallback metadata: $e');
       }
 
-      // Step 2: Extract cover art to temp file
       String? coverPath;
       try {
         final tempDir = await getTemporaryDirectory();
@@ -2783,7 +2775,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         }
       } catch (_) {}
 
-      // Step 3: Handle SAF vs regular file
       String workingPath = cleanFilePath;
       final isSaf = _isSafFile;
       String? safTempPath;
@@ -2803,7 +2794,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         workingPath = safTempPath;
       }
 
-      // Step 4: Convert
       final newPath = await FFmpegService.convertAudioFormat(
         inputPath: workingPath,
         targetFormat: targetFormat.toLowerCase(),
@@ -2838,7 +2828,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
       final newQuality = _buildConvertedQualityLabel(targetFormat, bitrate);
 
-      // Step 5: Handle SAF write-back
       if (isSaf) {
         final treeUri = _downloadItem?.downloadTreeUri;
         final relativeDir = _downloadItem?.safRelativeDir ?? '';
@@ -3064,7 +3053,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                 // Also remove from local library database
                 // ref.read(localLibraryProvider.notifier).removeItem(_localLibraryItem!.id);
               } else {
-                // Existing download history deletion logic
                 try {
                   await deleteFile(cleanFilePath);
                 } catch (e) {
@@ -3661,7 +3649,6 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
         expand: false,
         builder: (context, scrollController) => Column(
           children: [
-            // Handle bar
             Padding(
               padding: const EdgeInsets.only(top: 12, bottom: 8),
               child: Container(
@@ -3673,7 +3660,6 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
                 ),
               ),
             ),
-            // Title row
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
@@ -3698,7 +3684,6 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
               ),
             ),
             const SizedBox(height: 12),
-            // Fields
             Expanded(
               child: ListView(
                 controller: scrollController,

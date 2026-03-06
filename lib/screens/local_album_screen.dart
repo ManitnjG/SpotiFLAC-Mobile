@@ -13,7 +13,6 @@ import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
 
-/// Screen to display tracks from a local library album
 class LocalAlbumScreen extends ConsumerStatefulWidget {
   final String albumName;
   final String artistName;
@@ -83,7 +82,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
   List<LocalLibraryItem> _buildSortedTracks() {
     final tracks = List<LocalLibraryItem>.from(widget.tracks);
     tracks.sort((a, b) {
-      // Sort by disc number first, then by track number
       final aDisc = a.discNumber ?? 1;
       final bDisc = b.discNumber ?? 1;
       if (aDisc != bDisc) return aDisc.compareTo(bDisc);
@@ -197,7 +195,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
           ),
         );
 
-        // Go back if all tracks were deleted
         if (deletedCount == currentTracks.length) {
           Navigator.pop(context);
         }
@@ -233,7 +230,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final tracks = _sortedTracksCache;
 
-    // Show empty state if no tracks found
     if (tracks.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(widget.albumName)),
@@ -326,7 +322,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Full-screen cover background
                 if (widget.coverPath != null)
                   Image.file(
                     File(widget.coverPath!),
@@ -343,7 +338,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                // Bottom gradient for readability
                 Positioned(
                   left: 0,
                   right: 0,
@@ -362,7 +356,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
                     ),
                   ),
                 ),
-                // Album info overlay at bottom
                 Positioned(
                   left: 20,
                   right: 20,
@@ -888,7 +881,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     return false;
   }
 
-  /// Batch re-enrich selected local tracks
   Future<void> _reEnrichSelected(List<LocalLibraryItem> allTracks) async {
     final tracksById = {for (final t in allTracks) t.id: t};
     final selected = <LocalLibraryItem>[];
@@ -988,7 +980,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     ).showSnackBar(SnackBar(content: Text(summary)));
   }
 
-  /// Show batch convert bottom sheet
   void _showBatchConvertSheet(
     BuildContext context,
     List<LocalLibraryItem> allTracks,
@@ -1261,7 +1252,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
         String? safTempPath;
 
         if (isSaf) {
-          // Copy SAF file to temp for conversion
           safTempPath = await PlatformBridge.copyContentUriToTemp(
             item.filePath,
           );
@@ -1296,7 +1286,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
         if (isSaf) {
           // For SAF: derive the parent tree URI and relative dir from the content URI,
           // then create new SAF file and delete old one
-          //
           // Parse the SAF URI to get the tree document path:
           // content://...tree/...document/.../oldName.flac
           // We need tree URI and relative dir to create the new file
@@ -1375,14 +1364,12 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
               continue;
             }
 
-            // Delete old SAF file
             try {
               await PlatformBridge.safDelete(item.filePath);
             } catch (_) {}
             await localDb.deleteByPath(item.filePath);
           }
 
-          // Clean up temp files
           try {
             await File(newPath).delete();
           } catch (_) {}
@@ -1400,7 +1387,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
       } catch (_) {}
     }
 
-    // Reload local library to pick up converted files
     ref.read(localLibraryProvider.notifier).reloadFromStorage();
     _exitSelectionMode();
 
@@ -1513,7 +1499,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Action buttons row: Re-enrich, Convert
               Row(
                 children: [
                   Expanded(

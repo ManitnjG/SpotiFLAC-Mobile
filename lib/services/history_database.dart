@@ -104,8 +104,6 @@ class HistoryDatabase {
     }
   }
 
-  // ==================== iOS Path Normalization ====================
-
   /// Pattern to match iOS container paths
   /// Example: /var/mobile/Containers/Data/Application/UUID-HERE/Documents/...
   static final _iosContainerPattern = RegExp(
@@ -324,8 +322,6 @@ class HistoryDatabase {
       'copyright': row['copyright'],
     };
   }
-
-  // ==================== CRUD Operations ====================
 
   /// Insert or update a history item
   Future<void> upsert(Map<String, dynamic> json) async {

@@ -21,7 +21,6 @@ import 'package:spotiflac_android/widgets/download_service_picker.dart';
 import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
-/// Simple in-memory cache for artist data
 class _ArtistCache {
   static final Map<String, _CacheEntry> _cache = {};
   static const Duration _ttl = Duration(minutes: 10);
@@ -69,7 +68,6 @@ class _CacheEntry {
   });
 }
 
-/// Artist screen with Spotify-like design
 class ArtistScreen extends ConsumerStatefulWidget {
   final String artistId;
   final String artistName;
@@ -717,7 +715,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                 ),
               ),
               const Divider(height: 1),
-              // Options
               if (albums.isNotEmpty)
                 _DiscographyOptionTile(
                   icon: Icons.library_music,
@@ -830,7 +827,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     int failedCount = 0;
 
     for (final album in albums) {
-      if (!_isFetchingDiscography) break; // Cancelled
+      if (!_isFetchingDiscography) break;
 
       try {
         final tracks = await _fetchAlbumTracks(album);
@@ -1066,7 +1063,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
               CachedNetworkImage(
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                alignment: Alignment.topCenter, // Show top of image (faces)
+                alignment: Alignment.topCenter,
                 memCacheWidth: 800,
                 cacheManager: CoverCacheManager.instance,
                 placeholder: (context, url) =>
@@ -1155,7 +1152,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                       ],
                     ),
                   ),
-                  // Download Discography button (icon only, right-aligned)
                   if (hasDiscography && !_isSelectionMode) ...[
                     const SizedBox(width: 12),
                     Container(
@@ -1201,7 +1197,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     );
   }
 
-  /// Build Popular tracks section like Spotify
   Widget _buildPopularSection(ColorScheme colorScheme) {
     if (_topTracks == null || _topTracks!.isEmpty) {
       return const SizedBox.shrink();
@@ -1416,7 +1411,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     );
   }
 
-  /// Handle tap on popular track item
   void _handlePopularTrackTap(Track track, {required bool isQueued}) async {
     if (isQueued) return;
 
@@ -1636,7 +1630,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                           ),
                         ),
                 ),
-                // Selection overlay
                 if (_isSelectionMode)
                   Positioned.fill(
                     child: AnimatedContainer(
@@ -1652,7 +1645,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                       ),
                     ),
                   ),
-                // Checkbox
                 if (_isSelectionMode)
                   Positioned(
                     top: 8,

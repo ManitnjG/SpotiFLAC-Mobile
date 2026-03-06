@@ -361,7 +361,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get aboutAppDescription =>
-      'Spotify şarkılarını Tidal, Qobuz ve Amazon Music\'den yüksek kalitede indir.';
+      'Spotify şarkılarını Tidal ve Qobuz\'den yüksek kalitede indir.';
 
   @override
   String get artistAlbums => 'Albümler';
@@ -1821,7 +1821,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+      'Tidal, Qobuz veya Deezer\'den FLAC kalitesinde ses alın';
 
   @override
   String get tutorialWelcomeTip3 =>

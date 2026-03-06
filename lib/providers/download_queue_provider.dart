@@ -592,10 +592,8 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       return 0;
     }
 
-    // Delete from database
     final deletedCount = await _db.deleteByIds(orphanedIds);
 
-    // Update in-memory state
     final orphanedSet = orphanedIds.toSet();
     state = state.copyWith(
       items: state.items
@@ -1596,17 +1594,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   }
 
   String _determineOutputExt(String quality, String service) {
-    // YouTube provider - lossy only (Opus or MP3)
     if (service.toLowerCase() == 'youtube') {
       if (quality.toLowerCase().contains('mp3')) {
         return '.mp3';
       }
       return '.opus';
-    }
-    // Amazon stream is delivered as MP4/M4A container (may contain FLAC audio),
-    // so SAF should keep .m4a before decrypt/convert pipeline.
-    if (service.toLowerCase() == 'amazon') {
-      return '.m4a';
     }
     if (service.toLowerCase() == 'tidal' && quality == 'HIGH') {
       return '.m4a';
@@ -2903,7 +2895,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         failedCount: _failedInSession,
       );
 
-      // Auto-export failed downloads if enabled
       final settings = ref.read(settingsProvider);
       if (settings.autoExportFailedDownloads && _failedInSession > 0) {
         final exportPath = await exportFailedDownloads();
@@ -3206,7 +3197,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           !trackToDownload.id.startsWith('deezer:') &&
           !trackToDownload.id.startsWith('extension:')) {
         try {
-          // Extract clean Spotify ID (remove spotify: prefix if present)
           String spotifyId = trackToDownload.id;
           if (spotifyId.startsWith('spotify:track:')) {
             spotifyId = spotifyId.split(':').last;
@@ -3508,9 +3498,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
         if (!wasExisting &&
             decryptionKey.isNotEmpty &&
-            filePath != null &&
-            actualService == 'amazon') {
-          _log.i('Amazon encrypted stream detected, decrypting via FFmpeg...');
+            filePath != null) {
+          _log.i('Encrypted stream detected, decrypting via FFmpeg...');
           updateItemStatus(item.id, DownloadStatus.downloading, progress: 0.9);
 
           if (effectiveSafMode && isContentUri(filePath)) {
@@ -3539,7 +3528,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 updateItemStatus(
                   item.id,
                   DownloadStatus.failed,
-                  error: 'Failed to decrypt Amazon stream',
+                  error: 'Failed to decrypt encrypted stream',
                   errorType: DownloadErrorType.unknown,
                 );
                 return;
@@ -3564,7 +3553,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               );
 
               if (newUri == null) {
-                _log.e('Failed to write decrypted Amazon stream back to SAF');
+                _log.e('Failed to write decrypted stream back to SAF');
                 updateItemStatus(
                   item.id,
                   DownloadStatus.failed,
@@ -3579,7 +3568,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               }
               filePath = newUri;
               finalSafFileName = newFileName;
-              _log.i('Amazon SAF decryption completed');
+              _log.i('SAF decryption completed');
             } finally {
               try {
                 await File(tempPath).delete();
@@ -3601,7 +3590,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               updateItemStatus(
                 item.id,
                 DownloadStatus.failed,
-                error: 'Failed to decrypt Amazon stream',
+                error: 'Failed to decrypt encrypted stream',
                 errorType: DownloadErrorType.unknown,
               );
               try {
@@ -3610,7 +3599,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               return;
             }
             filePath = decryptedPath;
-            _log.i('Amazon local decryption completed');
+            _log.i('Local decryption completed');
           }
         }
 
@@ -3832,7 +3821,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               }
             }
           } else {
-            // Local file path flow (original)
             if (quality == 'HIGH') {
               final tidalHighFormat = settings.tidalHighFormat;
               _log.i(
@@ -4049,10 +4037,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             !effectiveSafMode &&
             isFlacFile &&
             !wasExisting &&
-            actualService == 'amazon' &&
             decryptionKey.isNotEmpty) {
           _log.d(
-            'Local FLAC after Amazon decrypt detected, embedding metadata and cover...',
+            'Local FLAC after decrypt detected, embedding metadata and cover...',
           );
           try {
             updateItemStatus(
@@ -4112,7 +4099,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
             final isContentUriPath = isContentUri(filePath);
             if (isContentUriPath && effectiveSafMode) {
-              // SAF mode: copy to temp, embed, write back
               final tempPath = await _copySafToTemp(filePath);
               if (tempPath != null) {
                 try {
@@ -4133,7 +4119,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                       copyright: backendCopyright,
                     );
                   }
-                  // Write back to SAF
                   final ext = isMp3File ? '.mp3' : '.opus';
                   final newFileName = '${safBaseName ?? 'track'}$ext';
                   final newUri = await _writeTempToSaf(
@@ -4162,7 +4147,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 }
               }
             } else {
-              // Non-SAF mode: embed directly
               try {
                 if (isMp3File) {
                   await _embedMetadataToMp3(

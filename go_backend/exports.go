@@ -478,25 +478,6 @@ func DownloadTrack(requestJSON string) (string, error) {
 			}
 		}
 		err = qobuzErr
-	case "amazon":
-		amazonResult, amazonErr := downloadFromAmazon(req)
-		if amazonErr == nil {
-			result = DownloadResult{
-				FilePath:      amazonResult.FilePath,
-				BitDepth:      amazonResult.BitDepth,
-				SampleRate:    amazonResult.SampleRate,
-				Title:         amazonResult.Title,
-				Artist:        amazonResult.Artist,
-				Album:         amazonResult.Album,
-				ReleaseDate:   amazonResult.ReleaseDate,
-				TrackNumber:   amazonResult.TrackNumber,
-				DiscNumber:    amazonResult.DiscNumber,
-				ISRC:          amazonResult.ISRC,
-				LyricsLRC:     amazonResult.LyricsLRC,
-				DecryptionKey: amazonResult.DecryptionKey,
-			}
-		}
-		err = amazonErr
 	case "deezer":
 		deezerResult, deezerErr := downloadFromDeezer(req)
 		if deezerErr == nil {
@@ -640,7 +621,7 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 
 	enrichRequestExtendedMetadata(&req)
 
-	allServices := []string{"tidal", "qobuz", "amazon", "deezer"}
+	allServices := []string{"tidal", "qobuz", "deezer"}
 	preferredService := req.Service
 	if preferredService == "" {
 		preferredService = "tidal"
@@ -707,27 +688,6 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 				GoLog("[DownloadWithFallback] Qobuz error: %v\n", qobuzErr)
 			}
 			err = qobuzErr
-		case "amazon":
-			amazonResult, amazonErr := downloadFromAmazon(req)
-			if amazonErr == nil {
-				result = DownloadResult{
-					FilePath:      amazonResult.FilePath,
-					BitDepth:      amazonResult.BitDepth,
-					SampleRate:    amazonResult.SampleRate,
-					Title:         amazonResult.Title,
-					Artist:        amazonResult.Artist,
-					Album:         amazonResult.Album,
-					ReleaseDate:   amazonResult.ReleaseDate,
-					TrackNumber:   amazonResult.TrackNumber,
-					DiscNumber:    amazonResult.DiscNumber,
-					ISRC:          amazonResult.ISRC,
-					LyricsLRC:     amazonResult.LyricsLRC,
-					DecryptionKey: amazonResult.DecryptionKey,
-				}
-			} else if !errors.Is(amazonErr, ErrDownloadCancelled) {
-				GoLog("[DownloadWithFallback] Amazon error: %v\n", amazonErr)
-			}
-			err = amazonErr
 		case "deezer":
 			deezerResult, deezerErr := downloadFromDeezer(req)
 			if deezerErr == nil {
@@ -1579,11 +1539,6 @@ func GetTidalURLFromDeezerTrack(deezerTrackID string) (string, error) {
 	return client.GetTidalURLFromDeezer(deezerTrackID)
 }
 
-func GetAmazonURLFromDeezerTrack(deezerTrackID string) (string, error) {
-	client := NewSongLinkClient()
-	return client.GetAmazonURLFromDeezer(deezerTrackID)
-}
-
 func errorResponse(msg string) (string, error) {
 	errorType := "unknown"
 	lowerMsg := strings.ToLower(msg)
@@ -2146,8 +2101,6 @@ func ReEnrichFile(requestJSON string) (string, error) {
 	return string(jsonBytes), nil
 }
 
-// ==================== EXTENSION SYSTEM ====================
-
 func InitExtensionSystem(extensionsDir, dataDir string) error {
 	manager := GetExtensionManager()
 	if err := manager.SetDirectories(extensionsDir, dataDir); err != nil {
@@ -2518,8 +2471,6 @@ func GetAllPendingFFmpegCommandsJSON() (string, error) {
 
 	return string(jsonBytes), nil
 }
-
-// ==================== EXTENSION CUSTOM SEARCH ====================
 
 func EnrichTrackWithExtensionJSON(extensionID, trackJSON string) (string, error) {
 	manager := GetExtensionManager()
@@ -3273,9 +3224,6 @@ func GetExtensionBrowseCategoriesJSON(extensionID string) (string, error) {
 	return callExtensionFunctionJSON(extensionID, "getBrowseCategories", 30*time.Second)
 }
 
-// ==================== LOCAL LIBRARY SCANNING ====================
-
-// SetLibraryCoverCacheDirJSON sets the directory for caching extracted cover art
 func SetLibraryCoverCacheDirJSON(cacheDir string) {
 	SetLibraryCoverCacheDir(cacheDir)
 }
@@ -3284,9 +3232,6 @@ func ScanLibraryFolderJSON(folderPath string) (string, error) {
 	return ScanLibraryFolder(folderPath)
 }
 
-// ScanLibraryFolderIncrementalJSON performs an incremental library scan
-// existingFilesJSON: JSON object mapping filePath -> modTime (unix millis)
-// Returns IncrementalScanResult as JSON
 func ScanLibraryFolderIncrementalJSON(folderPath, existingFilesJSON string) (string, error) {
 	return ScanLibraryFolderIncremental(folderPath, existingFilesJSON)
 }

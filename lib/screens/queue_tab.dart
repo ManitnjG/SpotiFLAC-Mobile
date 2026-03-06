@@ -211,7 +211,7 @@ class _GroupedAlbum {
 class _GroupedLocalAlbum {
   final String albumName;
   final String artistName;
-  final String? coverPath; // Local cover file path
+  final String? coverPath;
   final List<LocalLibraryItem> tracks;
   final DateTime latestScanned;
   final String searchKey;
@@ -229,12 +229,11 @@ class _GroupedLocalAlbum {
 
 class _HistoryStats {
   final Map<String, int> albumCounts;
-  final Map<String, int> localAlbumCounts; // For identifying local singles
+  final Map<String, int> localAlbumCounts;
   final List<_GroupedAlbum> groupedAlbums;
-  final List<_GroupedLocalAlbum> groupedLocalAlbums; // Local library albums
+  final List<_GroupedLocalAlbum> groupedLocalAlbums;
   final int albumCount;
   final int singleTracks;
-  // Local library stats
   final int localAlbumCount;
   final int localSingleTracks;
 
@@ -933,8 +932,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     overlay.insert(_playlistSelectionOverlayEntry!);
   }
 
-  // --- Playlist selection mode ---
-
   void _enterPlaylistSelectionMode(String playlistId) {
     HapticFeedback.mediumImpact();
     setState(() {
@@ -1202,11 +1199,9 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             await deleteFile(cleanPath);
           } catch (_) {}
 
-          // Remove from appropriate database
           if (item.source == LibraryItemSource.downloaded) {
             historyNotifier.removeFromHistory(item.historyItem!.id);
           } else {
-            // Remove from local library database
             await localLibraryDb.deleteByPath(item.filePath);
           }
           deletedCount++;
@@ -2024,7 +2019,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     Map<String, int> albumCounts, [
     String searchQuery = '',
   ]) {
-    // First apply search filter
     var filteredItems = items;
     if (searchQuery.isNotEmpty) {
       final query = searchQuery;
@@ -2034,7 +2028,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       }).toList();
     }
 
-    // Then apply filter mode
     if (filterMode == 'all') return filteredItems;
 
     switch (filterMode) {
@@ -2639,7 +2632,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   ),
                 ),
 
-                // Search bar - always at top
                 if (allHistoryItems.isNotEmpty ||
                     hasQueueItems ||
                     localLibraryItems.isNotEmpty)

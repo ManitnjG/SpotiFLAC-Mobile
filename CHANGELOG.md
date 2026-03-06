@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.7.2] - 2026-03-07
+
+### Changed
+
+- **Amazon Music is now an Extension**: Amazon Music has been moved from a built-in service to a separate installable extension. Install the "Amazon Music" extension from the Store to continue using it.
+
+### Fixed
+
+- **Deezer Downloads Timing Out**: Deezer downloads were failing with "context deadline exceeded" on larger files. Now uses the proper download timeout, matching Tidal and Qobuz.
+
+### Added
+
+- **Amazon Music Extension**: Available in `extension/Amazon-SpotiFLAC/` — same functionality as before, now as an installable extension.
+
+---
+
 ## [3.7.1] - 2026-03-06
 
 ### Added

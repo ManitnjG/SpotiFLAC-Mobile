@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-// LibraryScanResult represents metadata from a scanned audio file
 type LibraryScanResult struct {
 	ID          string `json:"id"`
 	TrackName   string `json:"trackName"`
@@ -42,7 +41,6 @@ type LibraryScanProgress struct {
 	IsComplete   bool    `json:"is_complete"`
 }
 
-// IncrementalScanResult contains results of an incremental library scan
 type IncrementalScanResult struct {
 	Scanned      []LibraryScanResult `json:"scanned"`      // New or updated files
 	DeletedPaths []string            `json:"deletedPaths"` // Files that no longer exist
@@ -216,7 +214,6 @@ func scanAudioFile(filePath, scanTime string) (*LibraryScanResult, error) {
 		Format:    strings.TrimPrefix(ext, "."),
 	}
 
-	// Get file modification time
 	if info, err := os.Stat(filePath); err == nil {
 		result.FileModTime = info.ModTime().UnixMilli()
 	}
@@ -466,7 +463,6 @@ func ScanLibraryFolderIncremental(folderPath, existingFilesJSON string) (string,
 		return "{}", fmt.Errorf("path is not a folder: %s", folderPath)
 	}
 
-	// Parse existing files map
 	existingFiles := make(map[string]int64)
 	if existingFilesJSON != "" && existingFilesJSON != "{}" {
 		if err := json.Unmarshal([]byte(existingFilesJSON), &existingFiles); err != nil {
@@ -476,12 +472,10 @@ func ScanLibraryFolderIncremental(folderPath, existingFilesJSON string) (string,
 
 	GoLog("[LibraryScan] Incremental scan starting, %d existing files in database\n", len(existingFiles))
 
-	// Reset progress
 	libraryScanProgressMu.Lock()
 	libraryScanProgress = LibraryScanProgress{}
 	libraryScanProgressMu.Unlock()
 
-	// Setup cancellation
 	libraryScanCancelMu.Lock()
 	if libraryScanCancel != nil {
 		close(libraryScanCancel)
@@ -490,7 +484,6 @@ func ScanLibraryFolderIncremental(folderPath, existingFilesJSON string) (string,
 	cancelCh := libraryScanCancel
 	libraryScanCancelMu.Unlock()
 
-	// Collect all audio files with their mod times
 	currentFiles, err := collectLibraryAudioFiles(folderPath, cancelCh)
 	if err != nil {
 		return "{}", err
@@ -512,18 +505,14 @@ func ScanLibraryFolderIncremental(folderPath, existingFilesJSON string) (string,
 	for _, f := range currentFiles {
 		existingModTime, exists := existingFiles[f.path]
 		if !exists {
-			// New file
 			filesToScan = append(filesToScan, f)
 		} else if f.modTime != existingModTime {
-			// Modified file
 			filesToScan = append(filesToScan, f)
 		} else {
-			// Unchanged file - skip
 			skippedCount++
 		}
 	}
 
-	// Find deleted files
 	var deletedPaths []string
 	for existingPath := range existingFiles {
 		if !currentPathSet[existingPath] {
@@ -551,7 +540,6 @@ func ScanLibraryFolderIncremental(folderPath, existingFilesJSON string) (string,
 		return string(jsonBytes), nil
 	}
 
-	// Scan the files that need scanning
 	results := make([]LibraryScanResult, 0, len(filesToScan))
 	scanTime := time.Now().UTC().Format(time.RFC3339)
 	errorCount := 0

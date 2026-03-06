@@ -763,7 +763,7 @@ abstract class AppLocalizations {
   /// App description in header card
   ///
   /// In en, this message translates to:
-  /// **'Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.'**
+  /// **'Download Spotify tracks in lossless quality from Tidal and Qobuz.'**
   String get aboutAppDescription;
 
   /// Section header for artist albums
@@ -1576,7 +1576,7 @@ abstract class AppLocalizations {
   /// **'If a track is not available on the first provider, the app will automatically try the next one.'**
   String get providerPriorityInfo;
 
-  /// Label for built-in providers (Tidal/Qobuz/Amazon)
+  /// Label for built-in providers (Tidal/Qobuz)
   ///
   /// In en, this message translates to:
   /// **'Built-in'**
@@ -3271,7 +3271,7 @@ abstract class AppLocalizations {
   /// Tutorial welcome tip 2
   ///
   /// In en, this message translates to:
-  /// **'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music'**
+  /// **'Get FLAC quality audio from Tidal, Qobuz, or Deezer'**
   String get tutorialWelcomeTip2;
 
   /// Tutorial welcome tip 3

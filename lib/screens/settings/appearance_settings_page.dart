@@ -148,7 +148,6 @@ class AppearanceSettingsPage extends ConsumerWidget {
   }
 }
 
-/// A simplified preview of how the app looks with current settings
 class _ThemePreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -423,7 +422,6 @@ class _ColorPaletteItem extends StatelessWidget {
   }
 }
 
-/// Optimized app bar title with animation
 class _AppBarTitle extends StatelessWidget {
   final String title;
   final double topPadding;
@@ -440,14 +438,14 @@ class _AppBarTitle extends StatelessWidget {
         final expandRatio =
             ((constraints.maxHeight - minHeight) / (maxHeight - minHeight))
                 .clamp(0.0, 1.0);
-        final leftPadding = 56 - (32 * expandRatio); // 56 -> 24
+        final leftPadding = 56 - (32 * expandRatio);
         return FlexibleSpaceBar(
           expandedTitleScale: 1.0,
           titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
           title: Text(
             title,
             style: TextStyle(
-              fontSize: 20 + (8 * expandRatio), // 20 -> 28
+              fontSize: 20 + (8 * expandRatio),
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
             ),

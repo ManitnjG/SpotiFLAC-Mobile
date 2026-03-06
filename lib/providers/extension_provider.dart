@@ -757,7 +757,6 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<void> loadProviderPriority() async {
     try {
-      // Load from SharedPreferences first (persisted)
       final prefs = await SharedPreferences.getInstance();
       final savedJson = prefs.getString(_providerPriorityKey);
 
@@ -768,10 +767,8 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
         priority = _sanitizeDownloadProviderPriority(priority);
         _log.d('Loaded provider priority from prefs: $priority');
         await prefs.setString(_providerPriorityKey, jsonEncode(priority));
-        // Sync to Go backend
         await PlatformBridge.setProviderPriority(priority);
       } else {
-        // Fallback to Go backend default
         priority = await PlatformBridge.getProviderPriority();
         priority = _sanitizeDownloadProviderPriority(priority);
         await PlatformBridge.setProviderPriority(priority);
@@ -787,11 +784,9 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
   Future<void> setProviderPriority(List<String> priority) async {
     try {
       final sanitized = _sanitizeDownloadProviderPriority(priority);
-      // Save to SharedPreferences for persistence
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_providerPriorityKey, jsonEncode(sanitized));
 
-      // Sync to Go backend
       await PlatformBridge.setProviderPriority(sanitized);
       state = state.copyWith(providerPriority: sanitized);
       _log.d('Saved provider priority: $sanitized');
@@ -811,7 +806,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       }
     }
 
-    for (final provider in const ['tidal', 'qobuz', 'amazon', 'deezer']) {
+    for (final provider in const ['tidal', 'qobuz', 'deezer']) {
       if (!result.contains(provider)) {
         result.add(provider);
       }
@@ -822,7 +817,6 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<void> loadMetadataProviderPriority() async {
     try {
-      // Load from SharedPreferences first (persisted)
       final prefs = await SharedPreferences.getInstance();
       final savedJson = prefs.getString(_metadataProviderPriorityKey);
 
@@ -831,10 +825,8 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
         final saved = jsonDecode(savedJson) as List<dynamic>;
         priority = saved.map((e) => e as String).toList();
         _log.d('Loaded metadata provider priority from prefs: $priority');
-        // Sync to Go backend
         await PlatformBridge.setMetadataProviderPriority(priority);
       } else {
-        // Fallback to Go backend default
         priority = await PlatformBridge.getMetadataProviderPriority();
         _log.d('Using default metadata provider priority: $priority');
       }
@@ -847,11 +839,9 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<void> setMetadataProviderPriority(List<String> priority) async {
     try {
-      // Save to SharedPreferences for persistence
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_metadataProviderPriorityKey, jsonEncode(priority));
 
-      // Sync to Go backend
       await PlatformBridge.setMetadataProviderPriority(priority);
       state = state.copyWith(metadataProviderPriority: priority);
       _log.d('Saved metadata provider priority: $priority');
@@ -880,7 +870,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
   }
 
   List<String> getAllDownloadProviders() {
-    final providers = ['tidal', 'qobuz', 'amazon', 'deezer'];
+    final providers = ['tidal', 'qobuz', 'deezer'];
     for (final ext in state.extensions) {
       if (ext.enabled && ext.hasDownloadProvider) {
         providers.add(ext.id);

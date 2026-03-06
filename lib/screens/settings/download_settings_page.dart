@@ -23,7 +23,7 @@ class DownloadSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
-  static const _builtInServices = ['tidal', 'qobuz', 'amazon', 'deezer'];
+  static const _builtInServices = ['tidal', 'qobuz', 'deezer'];
   static const _songLinkRegions = [
     'AD',
     'AE',
@@ -326,7 +326,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                       ((constraints.maxHeight - minHeight) /
                               (maxHeight - minHeight))
                           .clamp(0.0, 1.0);
-                  final leftPadding = 56 - (32 * expandRatio); // 56 -> 24
+                  final leftPadding = 56 - (32 * expandRatio);
                   return FlexibleSpaceBar(
                     expandedTitleScale: 1.0,
                     titlePadding: EdgeInsets.only(
@@ -336,7 +336,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     title: Text(
                       context.l10n.downloadTitle,
                       style: TextStyle(
-                        fontSize: 20 + (8 * expandRatio), // 20 -> 28
+                        fontSize: 20 + (8 * expandRatio),
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onSurface,
                       ),
@@ -450,7 +450,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Select Tidal, Qobuz, or Amazon above to configure quality',
+                              'Select Tidal or Qobuz above to configure quality',
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
@@ -720,7 +720,6 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
               ),
             ),
 
-            // Download Network Mode
             SliverToBoxAdapter(
               child: SettingsSectionHeader(title: context.l10n.sectionDownload),
             ),
@@ -778,7 +777,6 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
               ),
             ),
 
-            // All Files Access section (Android 13+ only)
             if (Platform.isAndroid && _androidSdkVersion >= 33) ...[
               SliverToBoxAdapter(
                 child: SettingsSectionHeader(
@@ -2039,7 +2037,7 @@ class _ServiceSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final extState = ref.watch(extensionProvider);
-    final builtInServiceIds = ['tidal', 'qobuz', 'amazon', 'deezer', 'youtube'];
+    final builtInServiceIds = ['tidal', 'qobuz', 'deezer', 'youtube'];
 
     final extensionProviders = extState.extensions
         .where((e) => e.enabled && e.hasDownloadProvider)
@@ -2073,15 +2071,6 @@ class _ServiceSelector extends ConsumerWidget {
                   label: 'Qobuz',
                   isSelected: effectiveService == 'qobuz',
                   onTap: () => onChanged('qobuz'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _ServiceChip(
-                  icon: Icons.shopping_bag_outlined,
-                  label: 'Amazon',
-                  isSelected: effectiveService == 'amazon',
-                  onTap: () => onChanged('amazon'),
                 ),
               ),
               const SizedBox(width: 8),

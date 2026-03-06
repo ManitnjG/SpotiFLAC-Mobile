@@ -90,7 +90,6 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Navigation Bar
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: topBarPaddingH,
@@ -112,7 +111,6 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
                     ),
                   ),
 
-                  // Skip button
                   TextButton(
                     onPressed: _skipTutorial,
                     style: TextButton.styleFrom(
@@ -131,7 +129,6 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
               ),
             ),
 
-            // Main Content Area
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -218,12 +215,10 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
               ),
             ),
 
-            // Bottom Control Area
             Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  // Expressive Page Indicators
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(_totalPages, (index) {
@@ -246,7 +241,6 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
                     }),
                   ),
                   SizedBox(height: bottomGap),
-                  // Action Button
                   SizedBox(
                     width: double.infinity,
                     height: actionButtonHeight,
@@ -402,7 +396,6 @@ class _InteractiveSearchExampleState extends State<_InteractiveSearchExample> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Search Input
           TextField(
             controller: _controller,
             onChanged: (value) {
@@ -428,7 +421,6 @@ class _InteractiveSearchExampleState extends State<_InteractiveSearchExample> {
             ),
           ),
 
-          // Result Placeholder
           AnimatedSize(
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeOutBack,
@@ -541,7 +533,6 @@ class _InteractiveDownloadExampleState
       _isCompleted = true;
     });
 
-    // Reset after a delay
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       setState(() {

@@ -363,7 +363,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get aboutAppDescription =>
-      'Скачайте треки Spotify в Lossless качестве из Tidal, Qobuz и Amazon Music.';
+      'Скачайте треки Spotify в Lossless качестве из Tidal и Qobuz.';
 
   @override
   String get artistAlbums => 'Альбомы';
@@ -1855,8 +1855,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Скачивайте музыку из Spotify, Deezer, или вставьте любой поддерживаемый URL';
 
   @override
-  String get tutorialWelcomeTip2 =>
-      'Скачайте FLAC с Tidal, Qobuz или Amazon Music';
+  String get tutorialWelcomeTip2 => 'Скачайте FLAC с Tidal, Qobuz или Deezer';
 
   @override
   String get tutorialWelcomeTip3 =>

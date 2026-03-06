@@ -766,6 +766,27 @@ class MainActivity: FlutterFragmentActivity() {
             val response = downloader(req.toString())
             val respObj = JSONObject(response)
             if (respObj.optBoolean("success", false)) {
+                // Extension providers write to a local temp path instead of the SAF FD.
+                // Copy the local file into the SAF document so it is not empty.
+                val goFilePath = respObj.optString("file_path", "")
+                if (goFilePath.isNotEmpty() &&
+                    !goFilePath.startsWith("content://") &&
+                    !goFilePath.startsWith("/proc/self/fd/")
+                ) {
+                    try {
+                        val srcFile = java.io.File(goFilePath)
+                        if (srcFile.exists() && srcFile.length() > 0) {
+                            contentResolver.openOutputStream(document.uri, "wt")?.use { output ->
+                                srcFile.inputStream().use { input ->
+                                    input.copyTo(output)
+                                }
+                            }
+                            srcFile.delete()
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("SpotiFLAC", "Failed to copy extension output to SAF: ${e.message}")
+                    }
+                }
                 respObj.put("file_path", document.uri.toString())
                 respObj.put("file_name", document.name ?: fileName)
             } else {
@@ -2236,13 +2257,6 @@ class MainActivity: FlutterFragmentActivity() {
                             val deezerTrackId = call.argument<String>("deezer_track_id") ?: ""
                             val response = withContext(Dispatchers.IO) {
                                 Gobackend.getTidalURLFromDeezerTrack(deezerTrackId)
-                            }
-                            result.success(response)
-                        }
-                        "getAmazonURLFromDeezerTrack" -> {
-                            val deezerTrackId = call.argument<String>("deezer_track_id") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.getAmazonURLFromDeezerTrack(deezerTrackId)
                             }
                             result.success(response)
                         }

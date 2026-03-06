@@ -22,7 +22,6 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
 
-  // State variables
   bool _storagePermissionGranted = false;
   bool _notificationPermissionGranted = false;
   String? _selectedDirectory;
@@ -474,7 +473,6 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Calculate progress
     final progress = (_currentStep + 1) / _totalSteps;
 
     return Scaffold(
@@ -482,7 +480,6 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
@@ -497,9 +494,8 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                       ),
                     )
                   else
-                    const SizedBox(width: 48), // Spacer
+                    const SizedBox(width: 48),
                   const Spacer(),
-                  // Progress Indicator
                   SizedBox(
                     width: 48,
                     height: 48,
@@ -530,7 +526,6 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               ),
             ),
 
-            // Content
             Expanded(
               child: PageView(
                 controller: _pageController,

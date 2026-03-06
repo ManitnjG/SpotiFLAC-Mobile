@@ -56,17 +56,14 @@ class DonatePage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Donate links card
                   _DonateLinksCard(colorScheme: colorScheme),
 
                   const SizedBox(height: 24),
 
-                  // Recent donors section
                   _RecentDonorsCard(colorScheme: colorScheme),
 
                   const SizedBox(height: 16),
 
-                  // Combined notice card
                   Card(
                     elevation: 0,
                     color: colorScheme.secondaryContainer.withValues(

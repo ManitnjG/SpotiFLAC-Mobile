@@ -492,13 +492,6 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return response
             
-        case "getAmazonURLFromDeezerTrack":
-            let args = call.arguments as! [String: Any]
-            let deezerTrackId = args["deezer_track_id"] as! String
-            let response = GobackendGetAmazonURLFromDeezerTrack(deezerTrackId, &error)
-            if let error = error { throw error }
-            return response
-            
         case "preWarmTrackCache":
             let args = call.arguments as! [String: Any]
             let tracksJson = args["tracks"] as! String

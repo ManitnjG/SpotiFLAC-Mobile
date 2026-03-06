@@ -204,7 +204,6 @@ class TrackNotifier extends Notifier<TrackState> {
     state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
 
     try {
-      // Step 1: Check for extension URL handlers first (handles YT Music, etc.)
       final extensionHandler = await PlatformBridge.findURLHandler(url);
       if (extensionHandler != null) {
         _log.i('Found extension URL handler: $extensionHandler for URL: $url');
@@ -215,7 +214,6 @@ class TrackNotifier extends Notifier<TrackState> {
           result = await PlatformBridge.handleURLWithExtension(url);
           if (!_isRequestValid(requestId)) return;
 
-          // Check if we got valid data
           if (result != null &&
               result['type'] == 'track' &&
               result['track'] != null) {
@@ -321,7 +319,6 @@ class TrackNotifier extends Notifier<TrackState> {
         }
       }
 
-      // Step 2: Try Deezer URL parsing
       if (url.contains('deezer.com') || url.contains('deezer.page.link')) {
         _log.i('Detected Deezer URL, parsing...');
         final parsed = await PlatformBridge.parseDeezerUrl(url);
@@ -387,7 +384,6 @@ class TrackNotifier extends Notifier<TrackState> {
         return;
       }
 
-      // Step 3: Try Tidal URL parsing
       if (url.contains('tidal.com')) {
         _log.i('Detected Tidal URL, parsing...');
         final parsed = await PlatformBridge.parseTidalUrl(url);
@@ -461,7 +457,6 @@ class TrackNotifier extends Notifier<TrackState> {
         return;
       }
 
-      // Step 4: Fall back to Spotify parsing
       final parsed = await PlatformBridge.parseSpotifyUrl(url);
       if (!_isRequestValid(requestId)) return;
 

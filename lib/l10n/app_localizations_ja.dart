@@ -352,7 +352,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get aboutAppDescription =>
-      'Tidal、Qobuz、Amazon Music から Spotify のトラックをロスレス品質でダウンロードします。';
+      'Tidal、Qobuz から Spotify のトラックをロスレス品質でダウンロードします。';
 
   @override
   String get artistAlbums => 'アルバム';
@@ -1795,8 +1795,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'Download music from Spotify, Deezer, or paste any supported URL';
 
   @override
-  String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+  String get tutorialWelcomeTip2 => 'Tidal、Qobuz、Deezer から FLAC 品質のオーディオを取得';
 
   @override
   String get tutorialWelcomeTip3 =>

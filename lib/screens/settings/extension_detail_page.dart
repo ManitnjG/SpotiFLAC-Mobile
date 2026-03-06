@@ -658,7 +658,6 @@ class _SettingItemState extends State<_SettingItem> {
         );
     }
 
-    // For button type, show a different layout
     if (widget.setting.type == 'button') {
       return Column(
         mainAxisSize: MainAxisSize.min,

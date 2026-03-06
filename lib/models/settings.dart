@@ -55,17 +55,14 @@ class AppSettings {
   final String
   songLinkRegion; // SongLink userCountry region code used for platform lookup
 
-  // Local Library Settings
   final bool localLibraryEnabled; // Enable local library scanning
   final String localLibraryPath; // Path to scan for audio files
   final bool
   localLibraryShowDuplicates; // Show indicator when searching for existing tracks
 
-  // Tutorial/Onboarding
   final bool
   hasCompletedTutorial; // Track if user has completed the app tutorial
 
-  // Lyrics Provider Settings
   final List<String>
   lyricsProviders; // Ordered list of enabled lyrics provider IDs
   final bool
@@ -77,7 +74,6 @@ class AppSettings {
   final String
   musixmatchLanguage; // Optional ISO language code for Musixmatch localized lyrics
 
-  // Version upgrade tracking
   final String
   lastSeenVersion; // Last app version the user has acknowledged (e.g. '3.7.0')
 
@@ -124,13 +120,10 @@ class AppSettings {
     this.downloadNetworkMode = 'any',
     this.networkCompatibilityMode = false,
     this.songLinkRegion = 'US',
-    // Local Library defaults
     this.localLibraryEnabled = false,
     this.localLibraryPath = '',
     this.localLibraryShowDuplicates = true,
-    // Tutorial default
     this.hasCompletedTutorial = false,
-    // Lyrics providers default order
     this.lyricsProviders = const [
       'lrclib',
       'spotify_api',
@@ -143,7 +136,6 @@ class AppSettings {
     this.lyricsIncludeRomanizationNetease = false,
     this.lyricsMultiPersonWordByWord = false,
     this.musixmatchLanguage = '',
-    // Version upgrade tracking
     this.lastSeenVersion = '',
   });
 
@@ -191,19 +183,15 @@ class AppSettings {
     String? downloadNetworkMode,
     bool? networkCompatibilityMode,
     String? songLinkRegion,
-    // Local Library
     bool? localLibraryEnabled,
     String? localLibraryPath,
     bool? localLibraryShowDuplicates,
-    // Tutorial
     bool? hasCompletedTutorial,
-    // Lyrics providers
     List<String>? lyricsProviders,
     bool? lyricsIncludeTranslationNetease,
     bool? lyricsIncludeRomanizationNetease,
     bool? lyricsMultiPersonWordByWord,
     String? musixmatchLanguage,
-    // Version upgrade tracking
     String? lastSeenVersion,
   }) {
     return AppSettings(
@@ -259,14 +247,11 @@ class AppSettings {
       networkCompatibilityMode:
           networkCompatibilityMode ?? this.networkCompatibilityMode,
       songLinkRegion: songLinkRegion ?? this.songLinkRegion,
-      // Local Library
       localLibraryEnabled: localLibraryEnabled ?? this.localLibraryEnabled,
       localLibraryPath: localLibraryPath ?? this.localLibraryPath,
       localLibraryShowDuplicates:
           localLibraryShowDuplicates ?? this.localLibraryShowDuplicates,
-      // Tutorial
       hasCompletedTutorial: hasCompletedTutorial ?? this.hasCompletedTutorial,
-      // Lyrics providers
       lyricsProviders: lyricsProviders ?? this.lyricsProviders,
       lyricsIncludeTranslationNetease:
           lyricsIncludeTranslationNetease ??
@@ -277,7 +262,6 @@ class AppSettings {
       lyricsMultiPersonWordByWord:
           lyricsMultiPersonWordByWord ?? this.lyricsMultiPersonWordByWord,
       musixmatchLanguage: musixmatchLanguage ?? this.musixmatchLanguage,
-      // Version upgrade tracking
       lastSeenVersion: lastSeenVersion ?? this.lastSeenVersion,
     );
   }

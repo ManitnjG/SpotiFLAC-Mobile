@@ -206,7 +206,6 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Full-screen cover background
                 if (widget.coverUrl != null)
                   CachedNetworkImage(
                     imageUrl:
@@ -227,7 +226,6 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                // Bottom gradient for readability
                 Positioned(
                   left: 0,
                   right: 0,
@@ -246,7 +244,6 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                     ),
                   ),
                 ),
-                // Playlist info overlay at bottom
                 Positioned(
                   left: 20,
                   right: 20,
@@ -435,8 +432,6 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       );
     }
   }
-
-  // ── Shuffle / Love / Download buttons ──
 
   Widget _buildCircleButton({
     required IconData icon,

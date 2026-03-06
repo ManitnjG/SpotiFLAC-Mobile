@@ -271,7 +271,6 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
             ),
           ),
 
-          // Scan Settings Section
           SliverToBoxAdapter(
             child: SettingsSectionHeader(
               title: context.l10n.libraryScanSettings,
@@ -442,7 +441,6 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
             ),
           ],
 
-          // Info Section
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -558,7 +556,6 @@ class _LibraryHeroCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Background decorative elements
           Positioned(
             right: -20,
             top: -20,
@@ -581,7 +578,6 @@ class _LibraryHeroCard extends StatelessWidget {
             ),
           ),
 
-          // Content
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(

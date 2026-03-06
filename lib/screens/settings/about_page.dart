@@ -49,7 +49,7 @@ class AboutPage extends StatelessWidget {
                     title: Text(
                       context.l10n.aboutTitle,
                       style: TextStyle(
-                        fontSize: 20 + (8 * expandRatio), // 20 -> 28
+                        fontSize: 20 + (8 * expandRatio),
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onSurface,
                       ),
@@ -462,7 +462,6 @@ class _ContributorItem extends StatelessWidget {
   }
 }
 
-/// Translator data model
 class _Translator {
   final String name;
   final String crowdinUsername;
@@ -477,7 +476,6 @@ class _Translator {
   });
 }
 
-/// Translators section with compact chip-style layout
 class _TranslatorsSection extends StatelessWidget {
   const _TranslatorsSection();
 
@@ -558,7 +556,6 @@ class _TranslatorsSection extends StatelessWidget {
   }
 }
 
-/// Individual translator chip
 class _TranslatorChip extends StatelessWidget {
   final _Translator translator;
 

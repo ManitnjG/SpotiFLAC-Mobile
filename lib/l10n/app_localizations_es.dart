@@ -356,7 +356,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get aboutAppDescription =>
-      'Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.';
+      'Download Spotify tracks in lossless quality from Tidal and Qobuz.';
 
   @override
   String get artistAlbums => 'Albums';
@@ -1809,7 +1809,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+      'Get FLAC quality audio from Tidal, Qobuz, or Deezer';
 
   @override
   String get tutorialWelcomeTip3 =>
@@ -2705,7 +2705,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get aboutAppDescription =>
-      'Descarga pistas de Spotify con calidad sin pérdida de Tidal, Qobuz y Amazon Music.';
+      'Descarga pistas de Spotify con calidad sin pérdida de Tidal y Qobuz.';
 
   @override
   String get artistAlbums => 'Álbumes';
@@ -4150,7 +4150,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+      'Obtén audio en calidad FLAC de Tidal, Qobuz o Deezer';
 
   @override
   String get tutorialWelcomeTip3 =>

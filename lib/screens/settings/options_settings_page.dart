@@ -43,7 +43,7 @@ class OptionsSettingsPage extends ConsumerWidget {
                       ((constraints.maxHeight - minHeight) /
                               (maxHeight - minHeight))
                           .clamp(0.0, 1.0);
-                  final leftPadding = 56 - (32 * expandRatio); // 56 -> 24
+                  final leftPadding = 56 - (32 * expandRatio);
                   return FlexibleSpaceBar(
                     expandedTitleScale: 1.0,
                     titlePadding: EdgeInsets.only(
@@ -53,7 +53,7 @@ class OptionsSettingsPage extends ConsumerWidget {
                     title: Text(
                       context.l10n.optionsTitle,
                       style: TextStyle(
-                        fontSize: 20 + (8 * expandRatio), // 20 -> 28
+                        fontSize: 20 + (8 * expandRatio),
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onSurface,
                       ),
@@ -331,7 +331,6 @@ class OptionsSettingsPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,

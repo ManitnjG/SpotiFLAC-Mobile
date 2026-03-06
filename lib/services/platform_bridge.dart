@@ -403,8 +403,6 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  // ==================== LYRICS PROVIDER SETTINGS ====================
-
   /// Sets the lyrics provider order. Providers not in the list are disabled.
   static Future<void> setLyricsProviders(List<String> providers) async {
     final providersJSON = jsonEncode(providers);
@@ -1060,8 +1058,6 @@ class PlatformBridge {
     }
   }
 
-  // ==================== LOCAL LIBRARY SCANNING ====================
-
   /// Set the directory for caching extracted cover art
   static Future<void> setLibraryCoverCacheDir(String cacheDir) async {
     _log.i('setLibraryCoverCacheDir: $cacheDir');
@@ -1261,5 +1257,4 @@ class PlatformBridge {
     await _channel.invokeMethod('clearStoreCache');
   }
 
-  // ==================== YOUTUBE / COBALT ====================
 }

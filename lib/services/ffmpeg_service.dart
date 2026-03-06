@@ -198,7 +198,7 @@ class FFmpegService {
     final trimmedKey = decryptionKey.trim();
     if (trimmedKey.isEmpty) return inputPath;
 
-    // Amazon encrypted streams are commonly MP4 container with FLAC audio.
+    // Encrypted streams are commonly MP4 container with FLAC audio.
     // Prefer FLAC output to avoid MP4 muxing errors during decrypt copy.
     final preferredExt = inputPath.toLowerCase().endsWith('.m4a')
         ? '.flac'
@@ -217,7 +217,10 @@ class FFmpegService {
       required String key,
     }) {
       final audioMap = mapAudioOnly ? '-map 0:a ' : '';
-      return '-v error -decryption_key "$key" -i "$inputPath" $audioMap-c copy "$outputPath" -y';
+      // Force MOV demuxer: -decryption_key is only supported by the MOV/MP4
+      // demuxer. The input may carry a .flac extension (SAF mode) while actually
+      // containing an encrypted M4A stream, so we must override auto-detection.
+      return '-v error -decryption_key "$key" -f mov -i "$inputPath" $audioMap-c copy "$outputPath" -y';
     }
 
     final keyCandidates = _buildDecryptionKeyCandidates(trimmedKey);
@@ -627,7 +630,7 @@ class FFmpegService {
     return null;
   }
 
-  static Future<LiveDecryptedStreamResult?> startAmazonLiveDecryptedStream({
+  static Future<LiveDecryptedStreamResult?> startEncryptedLiveDecryptedStream({
     required String encryptedStreamUrl,
     required String decryptionKey,
     String preferredFormat = 'flac',
@@ -1225,7 +1228,6 @@ class FFmpegService {
     final extension = format == 'opus' ? '.opus' : '.mp3';
     final outputPath = _buildOutputPath(inputPath, extension);
 
-    // Step 1: Convert audio
     String command;
     if (format == 'opus') {
       command =
@@ -1245,7 +1247,6 @@ class FFmpegService {
       return null;
     }
 
-    // Step 2: Embed metadata + cover into the converted file.
     // Treat embed failure as conversion failure when metadata/cover was requested.
     final hasMetadata = metadata.values.any((v) => v.trim().isNotEmpty);
     final hasCover = coverPath != null && coverPath.trim().isNotEmpty;
@@ -1281,7 +1282,6 @@ class FFmpegService {
       }
     }
 
-    // Step 3: Delete original if requested
     if (deleteOriginal) {
       try {
         await File(inputPath).delete();
